@@ -44,15 +44,15 @@ This project is an adaptation of the [three-tier-architecture-demo repository](h
 ## 📸 Live Screens and Example Output
 
 ### MongoDB Products (`catalogue.products`)
-![MongoDB Atlas - catalogue.products](screenshots/mongodb-products.png)
+![MongoDB Atlas - catalogue.products](mongodb-products.png)
 _Image 1: MongoDB Atlas Data Viewer_
 
 ### Kubernetes Pods Overview
-![Kubernetes Pods Terminal](screenshots/kubectl-get-pods.png)
+![Kubernetes Pods Terminal](kubectl-get-pods.png)
 _Image 2: Output from `kubectl get pods`_
 
 ### Running Application Homepage
-![Robot Shop Web Home](screenshots/robot-shop-home.png)
+![Robot Shop Web Home](robot-shop-home.png)
 _Image 3: Stan's Robot Shop UI (browser)_
 
 ---
