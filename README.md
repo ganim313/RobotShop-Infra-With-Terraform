@@ -268,14 +268,10 @@ Terraform created a private **Google Artifact Registry** repository for your ima
 
     ```sh
     # Run this command until an IP address appears in the "ADDRESS" column
-    kubectl get ingress -n robot-shop
-
-    # Example output:
-    # NAME         CLASS    HOSTS   ADDRESS          PORTS   AGE
-    # robot-shop   gce      * 34.123.45.67     80      5m
+    kubectl get services -o wide
     ```
 
-    You can now access your application by navigating to the `ADDRESS` (e.g., `http://34.123.45.67`) in your web browser.
+    You can now access your application by navigating to the `ADDRESS` (e.g., `http://136.119.249.71:8080`) in your web browser.
 
 -----
 
