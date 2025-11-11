@@ -237,6 +237,19 @@ _Example site (see above Image 3)!_
 
 ---
 
+## :bulb: Improvements and Tips
+
+- **Project badges and logos**: Added at the top for instant visual context.
+- **Architecture section clarity**: Key GCP services use recognizable icons for fast reference.
+- **Screenshots with context**: Visual cues for Kubernetes, MongoDB, and the running web app included.
+- **Expandable details**: For setup steps and prerequisites, so your README is clean for newcomers.
+- **Security best practices**: Secrets and IAM info highlighted, default DB deployment disabled.
+- **Accessible documentation**: Full cross-linking and references to upstream sources.
+- **Usage clarity**: Step-by-step guide with commands, placeholders, and practical variables.
+- **Encouraged contributions**: Noted at the bottom for issues and PRs.
+
+---
+
 ## :book: References & Credits
 
 - [instana/robot-shop](https://github.com/instana/robot-shop) (upstream application)
