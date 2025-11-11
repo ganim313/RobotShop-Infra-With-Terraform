@@ -1,0 +1,67 @@
+# Registry and repository for Docker images
+# Default is docker/robotshop/image:latest
+image:
+  repo: robotshop
+  version: latest
+  pullPolicy: IfNotPresent
+
+# EUM configuration
+# Provide your key and set the endpoint
+eum:
+  key: null
+  url: https://eum-eu-west-1.instana.io
+  #url: https://eum-us-west-2.instana.io
+
+# Pod Security Policy
+psp:
+  enabled: false
+
+# For the mini ones minikube, minishift set to true
+nodeport: false
+
+# "special" Openshift. Set to true when deploying to any openshift flavour
+openshift: false
+
+ocCreateRoute: false
+
+######################################
+# Affinities for individual workloads
+# set in the following way:
+# <workload>:
+#   affinity: {}
+#   nodeSelector: {}
+#   tolerations: []
+######################################
+
+web:
+  affinity: {}
+cart:
+  affinity: {}
+catalogue:
+  affinity: {}
+dispatch:
+  affinity: {}
+mongodb:
+  enabled: true
+  url: mongodb+srv://robot-shop-mongo-cluste.ia2jlug.mongodb.net
+mysql:
+  enabled: true
+  connection_name: robot-shop-project:us-central1:mysql-instance
+payment:
+  # Alternative payment gateway URL
+  # Default is https://www.paypal.com
+  gateway: null
+  #gateway: https://www.worldpay.com
+rabbitmq:
+  enabled: true
+  host: amqps://fzdepbpp:IhmOiMnZacocLIwrzk-K6QjXeAX2Q2QZ@albatross.rmq.cloudamqp.com/fzdepbpp
+ratings:
+  affinity: {}
+user:
+  affinity: {}
+redis:
+  host: 10.127.0.4
+  # Storage class to use with redis statefulset.
+  storageClassName: standard-rwo
+shipping:
+  affinity: {}

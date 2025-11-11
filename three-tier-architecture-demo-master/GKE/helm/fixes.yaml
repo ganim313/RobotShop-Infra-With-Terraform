@@ -1,0 +1,260 @@
+---
+# c:\Users\Md Ganim\Desktop\robot-shop-project\three-tier-architecture-demo-master\GKE\helm\values.yaml
+
+# Registry and repository for Docker images
+# Default is docker/robotshop/image:latest
+image:
+  repo: robotshop
+  version: latest
+  pullPolicy: IfNotPresent
+
+# EUM configuration
+# Provide your key and set the endpoint
+eum:
+  key: null
+  url: https://eum-eu-west-1.instana.io
+  #url: https://eum-us-west-2.instana.io
+
+# Pod Security Policy
+psp:
+  enabled: false
+
+# For the mini ones minikube, minishift set to true
+nodeport: false
+
+# "special" Openshift. Set to true when deploying to any openshift flavour
+openshift: false
+
+ocCreateRoute: false
+
+######################################
+# Affinities for individual workloads
+# set in the following way:
+# <workload>:
+#   affinity: {}
+#   nodeSelector: {}
+#   tolerations: []
+######################################
+
+web:
+  affinity: {}
+cart:
+  affinity: {}
+catalogue:
+  affinity: {}
+dispatch:
+  affinity: {}
+mongodb:
+  enabled: true
+  url: mongodb+srv://robot-shop-mongo-cluste.ia2jlug.mongodb.net
+mysql:
+  enabled: true
+  connection_name: robot-shop-project:us-central1:mysql-instance
+payment:
+  # Alternative payment gateway URL
+  # Default is https://www.paypal.com
+  gateway: null
+  #gateway: https://www.worldpay.com
+rabbitmq:
+  enabled: true
+  host: amqps://fzdepbpp:IhmOiMnZacocLIwrzk-K6QjXeAX2Q2QZ@albatross.rmq.cloudamqp.com/fzdepbpp
+ratings:
+  affinity: {}
+user:
+  affinity: {}
+redis:
+  host: 10.127.0.4
+  # Storage class to use with redis statefulset.
+  storageClassName: standard-rwo
+shipping:
+  affinity: {}
+
+---
+# c:\Users\Md Ganim\Desktop\robot-shop-project\three-tier-architecture-demo-master\GKE\helm\templates\cart-deployment.yaml
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cart
+  labels:
+    service: cart
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      service: cart
+  template:
+    metadata:
+      labels:
+        service: cart
+    spec:
+      {{ if .Values.psp.enabled }}
+      serviceAccountName: robot-shop
+      {{ end }}
+      containers:
+      - name: cart
+        image: {{ .Values.image.repo }}/rs-cart:{{ .Values.image.version }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        # agent networking access
+        env:
+          - name: REDIS_HOST
+            value: {{ .Values.redis.host | quote }}
+          - name: INSTANA_AGENT_HOST
+            valueFrom:
+              fieldRef:
+                fieldPath: status.hostIP
+        ports:
+        - containerPort: 8080
+        resources:
+          limits:
+            cpu: 200m
+            memory: 100Mi
+          requests:
+            cpu: 100m
+            memory: 50Mi
+      {{- with .Values.cart.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.cart.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.cart.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+---
+# c:\Users\Md Ganim\Desktop\robot-shop-project\three-tier-architecture-demo-master\GKE\helm\templates\shipping-deployment.yaml
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: shipping
+  labels:
+    service: shipping
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      service: shipping
+  template:
+    metadata:
+      labels:
+        service: shipping
+    spec:
+      {{ if .Values.psp.enabled }}
+      serviceAccountName: robot-shop
+      {{ end }}
+      containers:
+      - name: shipping
+        image: {{ .Values.image.repo }}/rs-shipping:{{ .Values.image.version }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        env:
+        - name: SPRING_DATASOURCE_URL
+          value: jdbc:mysql://127.0.0.1:3306/shipping
+        - name: SPRING_DATASOURCE_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: mysql-credentials
+              key: username
+        - name: SPRING_DATASOURCE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysql-credentials
+              key: password
+        ports:
+        - containerPort: 8080
+        # it's Java it needs lots of memory
+        resources:
+          limits:
+            cpu: 200m
+            memory: 1000Mi
+          requests:
+            cpu: 100m
+            memory: 500Mi
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          failureThreshold: 30
+          successThreshold: 1
+      - name: cloud-sql-proxy
+        image: gcr.io/cloudsql-docker/gce-proxy:1.17-alpine
+        command:
+          - "/cloud_sql_proxy"
+          - "-instances={{ .Values.mysql.connection_name }}=tcp:3306"
+        securityContext:
+          runAsUser: 2
+          allowPrivilegeEscalation: false
+      restartPolicy: Always
+      {{- with .Values.shipping.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.shipping.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.shipping.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+---
+# c:\Users\Md Ganim\Desktop\robot-shop-project\three-tier-architecture-demo-master\GKE\helm\templates\dispatch-deployment.yaml
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dispatch
+  labels:
+    service: dispatch
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      service: dispatch
+  template:
+    metadata:
+      labels:
+        service: dispatch
+    spec:
+      {{ if .Values.psp.enabled }}
+      serviceAccountName: robot-shop
+      {{ end }}
+      containers:
+      - name: dispatch
+        image: {{ .Values.image.repo }}/rs-dispatch:{{ .Values.image.version }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        env:
+          - name: RABBITMQ_HOST
+            value: {{ .Values.rabbitmq.host | quote }}
+          # agent networking access
+          - name: INSTANA_AGENT_HOST
+            valueFrom:
+              fieldRef:
+                fieldPath: status.hostIP
+        resources:
+          limits:
+            cpu: 200m
+            memory: 100Mi
+          requests:
+            cpu: 100m
+            memory: 50Mi
+      restartPolicy: Always
+      {{- with .Values.dispatch.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.dispatch.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.dispatch.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

@@ -1,0 +1,78 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: shipping
+  labels:
+    service: shipping
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      service: shipping
+  template:
+    metadata:
+      labels:
+        service: shipping
+    spec:
+      {{ if .Values.psp.enabled }}
+      serviceAccountName: robot-shop
+      {{ end }}
+      containers:
+      - name: shipping
+        image: {{ .Values.image.repo }}/shipping:{{ .Values.image.version }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        env:
+        - name: SPRING_DATASOURCE_URL
+          value: "jdbc:mysql://127.0.0.1:3306/shipping"
+        - name: SPRING_DATASOURCE_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: mysql-credentials
+              key: username
+        - name: SPRING_DATASOURCE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysql-credentials
+              key: password
+        ports:
+        - containerPort: 8080
+        # it's Java it needs lots of memory
+        resources:
+          limits:
+            cpu: 200m
+            memory: 1000Mi
+          requests:
+            cpu: 100m
+            memory: 500Mi
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          failureThreshold: 30
+          successThreshold: 1
+      - name: cloud-sql-proxy
+        image: gcr.io/cloudsql-docker/gce-proxy:1.28.0
+        command: ["/cloud_sql_proxy",
+                  "-instances={{ .Values.shipping.sqlInstanceConnectionName }}=tcp:3306"]
+        securityContext:
+          runAsUser: 2  # non-root user
+          allowPrivilegeEscalation: false
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu:    "50m"
+      restartPolicy: Always
+      {{- with .Values.shipping.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.shipping.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.shipping.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

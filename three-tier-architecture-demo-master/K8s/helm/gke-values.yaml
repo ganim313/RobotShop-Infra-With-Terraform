@@ -1,0 +1,24 @@
+# gke-values.yaml
+
+# Point to the images in your Google Artifact Registry
+image:
+  repo: us-central1-docker.pkg.dev/robot-shop-project/robot-shop-repo
+  # We will use the 'latest' tag we pushed
+  version: latest
+  pullPolicy: IfNotPresent
+
+# Disable in-cluster databases. We will use the managed services.
+# The application services will get connection details from ConfigMaps.
+mongodb:
+  enabled: false
+mysql:
+  enabled: false
+redis:
+  enabled: false
+rabbitmq:
+  enabled: false
+
+# Expose the web service via a LoadBalancer
+web:
+  service:
+    type: LoadBalancer
